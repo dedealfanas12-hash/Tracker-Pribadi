@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUNDI — Buku Kas &amp; Anggaran Pribadi</title>
+<style>
+  :root{
+    --ink:#10141A; --panel:#171C23; --panel-2:#1D232B; --rule:#2A313C;
+    --paper:#EAE3D3; --steel:#8B95A1; --steel-dim:#5E6670;
+    --brass:#C9A34E; --brass-dim:#8E7538; --brass-bg:rgba(201,163,78,0.12);
+    --positive:#6FA287; --positive-bg:rgba(111,162,135,0.14);
+    --negative:#C1584A; --negative-bg:rgba(193,88,74,0.14);
+    --font-display:Georgia,"Iowan Old Style","Palatino Linotype","Book Antiqua",serif;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:"SF Mono","IBM Plex Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--ink); color:var(--paper); font-family:var(--font-sans);
+    line-height:1.5; font-size:15px; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:600; margin:0; }
+  p{ margin:0; }
+  button{ font-family:var(--font-sans); }
+  :focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:20px 20px 80px; }
+
+  /* ---------- Header ---------- */
+  .app-header{ display:flex; align-items:center; gap:16px; padding:8px 0 20px; flex-wrap:wrap; }
+  .seal{
+    flex:none; width:46px; height:46px; border-radius:50%; border:2px solid var(--brass);
+    display:flex; align-items:center; justify-content:center; position:relative;
+    font-family:var(--font-display); font-size:21px; color:var(--brass); transform:rotate(-8deg);
+  }
+  .seal::before{ content:''; position:absolute; inset:4px; border:1px solid var(--brass); border-radius:50%; opacity:.5; }
+  .brand-block{ flex:1; min-width:180px; }
+  .brand-name{ font-size:26px; letter-spacing:.5px; color:var(--paper); }
+  .brand-tag{ font-size:12.5px; color:var(--steel); margin-top:2px; }
+  .header-period{ margin-left:auto; text-align:right; }
+  .header-period .periode-label{ font-size:12px; color:var(--steel); }
+  .header-period .periode-range{ font-family:var(--font-mono); font-size:14px; color:var(--paper); margin-top:2px; }
+  .btn-tutup{ margin-top:8px; }
+
+  /* ---------- Tabs ---------- */
+  .tabs{ display:flex; gap:3px; overflow-x:auto; border-bottom:1px solid var(--rule); scrollbar-width:thin; }
+  .tab{
+    flex:none; padding:10px 16px; border-radius:8px 8px 0 0; background:var(--panel);
+    border:1px solid var(--rule); border-bottom:none; color:var(--steel); font-size:13.5px;
+    cursor:pointer; white-space:nowrap; transform:translateY(1px);
+  }
+  .tab:hover{ color:var(--paper); }
+  .tab.active{ background:var(--ink); color:var(--brass); border-color:var(--brass-dim); position:relative; z-index:1; }
+
+  .view{ display:none; padding-top:26px; }
+  .view.active{ display:block; }
+
+  /* ---------- Cards / sections ---------- */
+  .card{ background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:20px; margin-bottom:20px; }
+  .section-title{ font-size:18px; color:var(--paper); margin-bottom:14px; }
+  .section-title small{ display:block; font-family:var(--font-sans); font-size:12px; color:var(--steel); font-weight:400; margin-top:2px; }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding:8px 4px 24px; }
+  .hero-label{ font-size:13px; color:var(--steel); }
+  .hero-row{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-top:6px; }
+  .hero-amount{ font-family:var(--font-display); font-size:52px; color:var(--paper); }
+  .badge{ display:inline-block; border-radius:999px; padding:4px 13px; font-size:12.5px; font-weight:600; border:1px solid transparent; }
+  .badge.positive{ color:var(--positive); background:var(--positive-bg); border-color:var(--positive); }
+  .badge.negative{ color:var(--negative); background:var(--negative-bg); border-color:var(--negative); }
+  .badge.neutral{ color:var(--brass); background:var(--brass-bg); border-color:var(--brass-dim); }
+  .hero-sub{ font-size:13.5px; color:var(--steel); margin-top:8px; }
+
+  /* ---------- Stat strip ---------- */
+  .stat-strip{ display:flex; background:var(--panel); border:1px solid var(--rule); border-radius:10px; overflow:hidden; margin-bottom:20px; }
+  .stat-item{ flex:1; padding:16px 18px; border-right:1px solid var(--rule); }
+  .stat-item:last-child{ border-right:none; }
+  .stat-item .stat-label{ font-size:12px; color:var(--steel); }
+  .stat-item .stat-value{ font-family:var(--font-mono); font-size:19px; color:var(--paper); margin-top:6px; font-variant-numeric:tabular-nums; }
+  .stat-item .stat-value.positive{ color:var(--positive); }
+  .stat-item .stat-value.negative{ color:var(--negative); }
+  .stat-item .stat-value.brass{ color:var(--brass); }
+
+  /* ---------- Tables ---------- */
+  .table-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; min-width:560px; }
+  thead th{
+    text-align:left; padding:9px 12px; border-bottom:2px solid var(--brass-dim); color:var(--steel);
+    font-size:12.5px; font-weight:600; white-space:nowrap;
+  }
+  thead th.num{ text-align:right; }
+  tbody td{ padding:10px 12px; border-bottom:1px solid var(--rule); font-size:13.5px; vertical-align:middle; }
+  tbody tr:hover{ background:var(--panel-2); }
+  td.num, th.num{ text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.muted{ color:var(--steel); font-size:12.5px; }
+  tfoot td{ padding:10px 12px; font-family:var(--font-mono); font-weight:600; border-top:2px solid var(--brass-dim); }
+  .row-actions{ white-space:nowrap; }
+  .row-actions button{ font-size:12px; }
+
+  .empty-state{ padding:22px 6px; color:var(--steel); font-style:italic; font-size:13.5px; }
+
+  /* ---------- Forms ---------- */
+  form.entry-form{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px 16px; align-items:end; margin-bottom:18px; }
+  .field{ display:flex; flex-direction:column; }
+  .field label{ font-size:11.5px; color:var(--steel); margin-bottom:5px; }
+  .field input, .field select, .field textarea{
+    background:transparent; border:none; border-bottom:1px solid var(--rule); color:var(--paper);
+    padding:7px 2px; font-size:14px; font-family:var(--font-sans); width:100%;
+  }
+  .field input[type="number"]{ font-family:var(--font-mono); }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-bottom-color:var(--brass); }
+  .field-actions{ display:flex; gap:8px; }
+
+  /* ---------- Buttons ---------- */
+  .btn{ border-radius:6px; padding:9px 16px; font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid transparent; }
+  .btn-primary{ background:var(--brass); color:var(--ink); }
+  .btn-primary:hover{ background:#dab566; }
+  .btn-ghost{ background:transparent; border-color:var(--rule); color:var(--paper); }
+  .btn-ghost:hover{ border-color:var(--steel); }
+  .btn-text{ background:transparent; border:none; color:var(--steel); padding:4px 6px; cursor:pointer; }
+  .btn-text:hover{ color:var(--paper); }
+  .btn-text.danger:hover{ color:var(--negative); }
+  .btn-sm{ padding:6px 12px; font-size:12.5px; }
+
+  /* ---------- Progress ---------- */
+  .progress{ height:8px; background:var(--rule); border-radius:4px; overflow:hidden; margin-top:8px; }
+  .progress > .fill{ height:100%; background:var(--brass); }
+  .progress-label{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--steel); margin-top:6px; }
+
+  /* ---------- Misc ---------- */
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .sub-note{ font-size:12px; color:var(--steel-dim); margin-top:10px; }
+  .divider{ height:1px; background:var(--rule); margin:20px 0; }
+  select option{ background:var(--panel); color:var(--paper); }
+  footer.app-footer{ text-align:center; color:var(--steel-dim); font-size:11.5px; padding:30px 0 10px; }
+
+  @media (max-width:720px){
+    .two-col{ grid-template-columns:1fr; }
+    .header-period{ margin-left:0; text-align:left; }
+    .hero-amount{ font-size:38px; }
+  }
+  @media (max-width:520px){
+    .stat-strip{ flex-wrap:wrap; }
+    .stat-item{ flex:1 1 50%; border-right:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+    .stat-item:nth-child(2n){ border-right:none; }
+    form.entry-form{ grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-header">
+    <div class="seal">P</div>
+    <div class="brand-block">
+      <div class="brand-name">PUNDI</div>
+      <div class="brand-tag">Buku kas &amp; anggaran pribadi</div>
+    </div>
+    <div class="header-period">
+      <div class="periode-label">Periode berjalan</div>
+      <div class="periode-range" id="header-periode-range">–</div>
+      <div><button class="btn btn-ghost btn-sm btn-tutup" id="btn-tutup-periode" type="button">Tutup periode</button></div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="dashboard" type="button">Dashboard</button>
+    <button class="tab" data-view="pemasukan" type="button">Pemasukan</button>
+    <button class="tab" data-view="transaksi" type="button">Transaksi</button>
+    <button class="tab" data-view="budget" type="button">Budget</button>
+    <button class="tab" data-view="portofolio" type="button">Portofolio</button>
+    <button class="tab" data-view="tabungan" type="button">Tabungan</button>
+    <button class="tab" data-view="riwayat" type="button">Riwayat</button>
+  </nav>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view active" id="view-dashboard">
+    <div class="hero">
+      <div class="hero-label" id="dash-periode-label">Periode –</div>
+      <div class="hero-row">
+        <span class="hero-amount" id="dash-sisa">Rp0</span>
+        <span class="badge neutral" id="dash-status">–</span>
+      </div>
+      <p class="hero-sub" id="dash-sub">–</p>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-label">Pemasukan</div><div class="stat-value" id="dash-income">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Budget</div><div class="stat-value" id="dash-budget">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Aktual</div><div class="stat-value" id="dash-aktual">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Sisa</div><div class="stat-value brass" id="dash-sisa2">Rp0</div></div>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-label">Nilai portofolio</div><div class="stat-value brass" id="dash-nilai-portofolio">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Total tabungan</div><div class="stat-value brass" id="dash-total-tabungan">Rp0</div></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Kesimpulan periode</h2>
+      <p id="dash-kesimpulan" style="color:var(--paper); font-size:14px;">–</p>
+    </div>
+  </section>
+
+  <!-- ============ PEMASUKAN ============ -->
+  <section class="view" id="view-pemasukan">
+    <div class="card">
+      <h2 class="section-title">Tambah pemasukan</h2>
+      <form class="entry-form" id="form-pemasukan">
+        <input type="hidden" id="pemasukan-editing-id">
+        <div class="field"><label for="pm-tanggal">Tanggal</label><input type="date" id="pm-tanggal" required></div>
+        <div class="field"><label for="pm-sumber">Sumber</label><input type="text" id="pm-sumber" list="list-sumber" placeholder="Contoh: Customer" required></div>
+        <div class="field"><label for="pm-keterangan">Keterangan</label><input type="text" id="pm-keterangan" placeholder="Contoh: Tip" required></div>
+        <div class="field"><label for="pm-nominal">Nominal (Rp)</label><input type="number" id="pm-nominal" min="0" step="1" required></div>
+        <div class="field"><label for="pm-metode">Metode</label>
+          <select id="pm-metode">
+            <option value="">–</option>
+            <option value="Cash">Cash</option>
+            <option value="Transfer">Transfer</option>
+            <option value="Qris">Qris</option>
+            <option value="Debit">Debit</option>
+          </select>
+        </div>
+        <div class="field-actions">
+          <button type="submit" class="btn btn-primary" id="pm-submit-btn">Tambah</button>
+          <button type="button" class="btn btn-ghost" id="pm-cancel-btn" style="display:none;">Batal</button>
+        </div>
+      </form>
+      <datalist id="list-sumber"></datalist>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Riwayat pemasukan periode ini <small id="pemasukan-total-label">Total Rp0</small></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tanggal</th><th>Sumber</th><th>Keterangan</th><th class="num">Nominal</th><th>Metode</th><th></th></tr></thead>
+          <tbody id="pemasukan-rows"></tbody>
+        </table>
+      </div>
+      <div id="pemasukan-empty" class="empty-state" style="display:none;">Belum ada pemasukan tercatat. Tambahkan lewat form di atas.</div>
+    </div>
+  </section>
+
+  <!-- ============ TRANSAKSI ============ -->
+  <section class="view" id="view-transaksi">
+    <div class="card">
+      <h2 class="section-title">Tambah transaksi</h2>
+      <form class="entry-form" id="form-transaksi">
+        <input type="hidden" id="transaksi-editing-id">
+        <div class="field"><label for="tx-tanggal">Tanggal</label><input type="date" id="tx-tanggal" required></div>
+        <div class="field"><label for="tx-kategori">Kategori</label><select id="tx-kategori" required></select></div>
+        <div class="field"><label for="tx-keterangan">Keterangan</label><input type="text" id="tx-keterangan" placeholder="Contoh: Makan siang" required></div>
+        <div class="field"><label for="tx-nominal">Nominal (Rp)</label><input type="number" id="tx-nominal" min="0" step="1" required></div>
+        <div class="field"><label for="tx-metode">Metode</label>
+          <select id="tx-metode">
+            <option value="">–</option>
+            <option value="Cash">Cash</option>
+            <option value="Transfer">Transfer</option>
+            <option value="Qris">Qris</option>
+            <option value="Debit">Debit</option>
+          </select>
+        </div>
+        <div class="field"><label for="tx-catatan">Catatan</label><input type="text" id="tx-catatan" placeholder="Opsional"></div>
+        <div class="field-actions">
+          <button type="submit" class="btn btn-primary" id="tx-submit-btn">Tambah</button>
+          <button type="button" class="btn btn-ghost" id="tx-cancel-btn" style="display:none;">Batal</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+        <h2 class="section-title" style="margin-bottom:0;">Transaksi periode ini <small id="transaksi-total-label">Total Rp0</small></h2>
+        <select id="tx-filter-kategori" style="background:var(--panel-2); color:var(--paper); border:1px solid var(--rule); border-radius:6px; padding:7px 10px; font-size:13px;">
+          <option value="">Semua kategori</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th class="num">Nominal</th><th>Metode</th><th></th></tr></thead>
+          <tbody id="transaksi-rows"></tbody>
+        </table>
+      </div>
+      <div id="transaksi-empty" class="empty-state" style="display:none;">Belum ada transaksi tercatat. Tambahkan lewat form di atas.</div>
+    </div>
+  </section>
+
+  <!-- ============ BUDGET ============ -->
+  <section class="view" id="view-budget">
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-label">Total budget</div><div class="stat-value" id="budget-total">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Total aktual</div><div class="stat-value" id="budget-aktual-total">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Sisa budget</div><div class="stat-value brass" id="budget-sisa-total">Rp0</div></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Budget per kategori</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Kategori</th><th>Keterangan</th><th class="num">Budget</th><th class="num">% Income</th>
+            <th class="num">Aktual</th><th class="num">Sisa</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="budget-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Tambah kategori baru</h2>
+      <form class="entry-form" id="form-kategori">
+        <div class="field"><label for="kt-nama">Nama kategori</label><input type="text" id="kt-nama" required></div>
+        <div class="field"><label for="kt-keterangan">Keterangan</label><input type="text" id="kt-keterangan"></div>
+        <div class="field"><label for="kt-budget">Budget (Rp)</label><input type="number" id="kt-budget" min="0" step="1" required></div>
+        <div class="field"><label for="kt-irit">Batas irit (%)</label><input type="number" id="kt-irit" min="0" max="100" step="0.1" value="0"></div>
+        <div class="field"><label for="kt-pas">Batas pas (%)</label><input type="number" id="kt-pas" min="0" max="100" step="0.1" value="5"></div>
+        <div class="field-actions"><button type="submit" class="btn btn-primary">Tambah kategori</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Acuan kategori<small>Batas wajar pengeluaran, sebagai % dari total pemasukan</small></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kategori</th><th class="num">Batas irit</th><th class="num">Batas pas</th><th>Keterangan</th></tr></thead>
+          <tbody id="acuan-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PORTOFOLIO ============ -->
+  <section class="view" id="view-portofolio">
+    <div class="stat-strip">
+      <div class="stat-item"><div class="stat-label">Total nilai</div><div class="stat-value" id="pf-total-nilai">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Total modal</div><div class="stat-value" id="pf-total-modal">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Laba/Rugi</div><div class="stat-value" id="pf-laba-rugi">Rp0</div></div>
+      <div class="stat-item"><div class="stat-label">Return</div><div class="stat-value" id="pf-return">0%</div></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Tambah aset</h2>
+      <form class="entry-form" id="form-portofolio">
+        <input type="hidden" id="pf-editing-id">
+        <div class="field"><label for="pf-nama">Nama aset</label><input type="text" id="pf-nama" required></div>
+        <div class="field"><label for="pf-kategori">Kategori</label>
+          <select id="pf-kategori">
+            <option>Reksa Dana</option><option>Saham</option><option>Crypto</option>
+            <option>Emas</option><option>Properti</option><option>Cash</option>
+          </select>
+        </div>
+        <div class="field"><label for="pf-unit">Unit</label><input type="number" id="pf-unit" step="any" value="0"></div>
+        <div class="field"><label for="pf-modal">Modal (Rp)</label><input type="number" id="pf-modal" step="1" required></div>
+        <div class="field"><label for="pf-harga-beli">Harga beli</label><input type="number" id="pf-harga-beli" step="any" value="0"></div>
+        <div class="field"><label for="pf-harga-kini">Harga kini</label><input type="number" id="pf-harga-kini" step="any" value="0"></div>
+        <div class="field"><label for="pf-hasil-lain">Dividen/hasil lain (Rp)</label><input type="number" id="pf-hasil-lain" step="1" value="0"></div>
+        <div class="field"><label for="pf-keterangan">Keterangan</label><input type="text" id="pf-keterangan" placeholder="Platform, dll"></div>
+        <div class="field"><label for="pf-coingecko-id">CoinGecko ID (khusus Crypto)</label><input type="text" id="pf-coingecko-id" placeholder="Contoh: bitcoin, fetch-ai"></div>
+        <div class="field-actions">
+          <button type="submit" class="btn btn-primary" id="pf-submit-btn">Tambah</button>
+          <button type="button" class="btn btn-ghost" id="pf-cancel-btn" style="display:none;">Batal</button>
+        </div>
+      </form>
+      <p class="sub-note">Untuk aset kategori Cash, nilai kini mengikuti nominal modal — unit dan harga diabaikan. Dividen/hasil lain menambah Laba/Rugi secara terpisah dari perubahan harga unit — cocok untuk dividen saham, bagi hasil reksadana, bunga, atau staking reward. Berlaku untuk semua kategori aset. CoinGecko ID dipakai untuk isi otomatis harga kini aset Crypto lewat tombol "Refresh harga crypto" — cari ID-nya di coingecko.com/en/coins/[nama].</p>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+        <h2 class="section-title" style="margin-bottom:0;">Aset portofolio</h2>
+        <div style="text-align:right;">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-refresh-crypto">Refresh harga crypto</button>
+          <div class="sub-note" id="refresh-crypto-status" style="margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Aset</th><th>Kategori</th><th class="num">Unit</th><th class="num">Modal</th>
+            <th class="num">Harga kini</th><th class="num">Nilai kini</th><th class="num">Laba/Rugi</th>
+            <th class="num">% Folio</th><th></th>
+          </tr></thead>
+          <tbody id="portofolio-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Target alokasi portofolio<small>Rencana komposisi aset ke depan</small></h2>
+      <div class="stat-strip" style="margin-bottom:16px;">
+        <div class="stat-item">
+          <div class="stat-label">Target total (Rp)</div>
+          <input type="number" id="target-total-input" class="stat-value" style="background:transparent;border:none;color:var(--paper);font-family:var(--font-mono);font-size:19px;width:100%;padding:0;">
+        </div>
+        <div class="stat-item"><div class="stat-label">Sekarang</div><div class="stat-value" id="target-sekarang">Rp0</div></div>
+        <div class="stat-item"><div class="stat-label">Kurang</div><div class="stat-value brass" id="target-kurang">Rp0</div></div>
+      </div>
+      <div class="progress"><div class="fill" id="target-progress-fill" style="width:0%;"></div></div>
+
+      <div class="divider"></div>
+      <form class="entry-form" id="form-target">
+        <div class="field"><label for="tg-kelompok">Kelompok</label><input type="text" id="tg-kelompok" placeholder="Contoh: Crypto" required></div>
+        <div class="field"><label for="tg-nama">Item</label><input type="text" id="tg-nama" placeholder="Contoh: Bitcoin" required></div>
+        <div class="field"><label for="tg-target">Target</label><input type="number" id="tg-target" step="any" required></div>
+        <div class="field"><label for="tg-satuan">Satuan</label><input type="text" id="tg-satuan" value="Rp" placeholder="Rp / Lot"></div>
+        <div class="field-actions"><button type="submit" class="btn btn-primary">Tambah</button></div>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kelompok</th><th>Item</th><th class="num">Target</th><th>Satuan</th><th></th></tr></thead>
+          <tbody id="target-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TABUNGAN & RENCANA ============ -->
+  <section class="view" id="view-tabungan">
+    <div class="two-col">
+      <div class="card" id="goal-rumah">
+        <h2 class="section-title">Tabungan rumah<small id="goal-rumah-sub">Target –</small></h2>
+        <div class="progress"><div class="fill" id="goal-rumah-fill" style="width:0%;"></div></div>
+        <div class="progress-label"><span id="goal-rumah-realisasi">Rp0</span><span id="goal-rumah-sisa">Sisa Rp0</span></div>
+        <div class="divider"></div>
+        <form class="entry-form" data-goal="rumah">
+          <div class="field"><label>Tanggal</label><input type="date" class="goal-tanggal" required></div>
+          <div class="field"><label>Nilai (Rp)</label><input type="number" class="goal-nilai" min="0" required></div>
+          <div class="field"><label>Tempat</label><input type="text" class="goal-tempat"></div>
+          <div class="field"><label>Keterangan</label><input type="text" class="goal-keterangan"></div>
+          <div class="field-actions"><button type="submit" class="btn btn-primary btn-sm">Tambah</button></div>
+        </form>
+        <div class="table-wrap">
+          <table><thead><tr><th>Tanggal</th><th>Nilai</th><th>Tempat</th><th></th></tr></thead>
+          <tbody id="goal-rumah-rows"></tbody></table>
+        </div>
+      </div>
+
+      <div class="card" id="goal-motor">
+        <h2 class="section-title">Tabungan motor<small id="goal-motor-sub">Target –</small></h2>
+        <div class="progress"><div class="fill" id="goal-motor-fill" style="width:0%;"></div></div>
+        <div class="progress-label"><span id="goal-motor-realisasi">Rp0</span><span id="goal-motor-sisa">Sisa Rp0</span></div>
+        <div class="divider"></div>
+        <form class="entry-form" data-goal="motor">
+          <div class="field"><label>Tanggal</label><input type="date" class="goal-tanggal" required></div>
+          <div class="field"><label>Nilai (Rp)</label><input type="number" class="goal-nilai" min="0" required></div>
+          <div class="field"><label>Tempat</label><input type="text" class="goal-tempat"></div>
+          <div class="field"><label>Keterangan</label><input type="text" class="goal-keterangan"></div>
+          <div class="field-actions"><button type="submit" class="btn btn-primary btn-sm">Tambah</button></div>
+        </form>
+        <div class="table-wrap">
+          <table><thead><tr><th>Tanggal</th><th>Nilai</th><th>Tempat</th><th></th></tr></thead>
+          <tbody id="goal-motor-rows"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Rencana liburan / main<small id="liburan-sub">Estimasi budget –</small></h2>
+      <div class="progress"><div class="fill" id="liburan-fill" style="width:0%;"></div></div>
+      <div class="progress-label"><span id="liburan-realisasi">Rp0</span><span id="liburan-sisa">Sisa Rp0</span></div>
+      <div class="divider"></div>
+      <div class="entry-form" style="margin-bottom:10px;">
+        <div class="field"><label for="liburan-estimasi">Estimasi budget (Rp)</label><input type="number" id="liburan-estimasi" min="0"></div>
+      </div>
+      <form class="entry-form" id="form-liburan">
+        <div class="field"><label>Tanggal</label><input type="date" id="lb-tanggal" required></div>
+        <div class="field"><label>Nilai (Rp)</label><input type="number" id="lb-nilai" min="0" required></div>
+        <div class="field"><label>Tempat</label><input type="text" id="lb-tempat"></div>
+        <div class="field"><label>Keterangan</label><input type="text" id="lb-keterangan"></div>
+        <div class="field-actions"><button type="submit" class="btn btn-primary btn-sm">Tambah</button></div>
+      </form>
+      <div class="table-wrap">
+        <table><thead><tr><th>Tanggal</th><th>Nilai</th><th>Tempat</th><th>Keterangan</th><th></th></tr></thead>
+        <tbody id="liburan-rows"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RIWAYAT ============ -->
+  <section class="view" id="view-riwayat">
+    <div class="card">
+      <h2 class="section-title">Periode saat ini<small>Diperbarui otomatis mengikuti pemasukan &amp; transaksi</small></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Periode</th><th class="num">Income</th><th class="num">Budget</th><th class="num">Aktual</th><th class="num">Sisa</th><th>Status</th></tr></thead>
+          <tbody id="riwayat-current-row"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2 class="section-title">Riwayat periode tertutup</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Periode</th><th class="num">Income</th><th class="num">Budget</th><th class="num">Aktual</th><th class="num">Sisa</th><th>Status</th><th>Evaluasi</th></tr></thead>
+          <tbody id="riwayat-rows"></tbody>
+        </table>
+      </div>
+      <div id="riwayat-empty" class="empty-state" style="display:none;">Belum ada periode yang ditutup. Gunakan tombol "Tutup periode" di bagian atas halaman saat periode ini selesai.</div>
+    </div>
+  </section>
+
+  <footer class="app-footer">Data tersimpan otomatis di perangkat ini.</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= Utilities ================= */
+  function $(sel, el){ return (el||document).querySelector(sel); }
+  function $all(sel, el){ return Array.from((el||document).querySelectorAll(sel)); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function esc(s){
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function rupiah(n){
+    n = Math.round(n || 0);
+    var neg = n < 0;
+    var s = Math.abs(n).toLocaleString('id-ID');
+    return (neg ? '-' : '') + 'Rp' + s;
+  }
+  function pct1(n){
+    if (!isFinite(n)) n = 0;
+    return (n*100).toFixed(1).replace('.', ',') + '%';
+  }
+  var MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  function fmtTanggal(iso){
+    if (!iso) return '–';
+    var d = new Date(iso + 'T00:00:00');
+    if (isNaN(d.getTime())) return iso;
+    return d.getDate() + ' ' + MONTHS_ID[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function trimNum(n, dp){
+    dp = dp === undefined ? 6 : dp;
+    if (!isFinite(n)) return '0';
+    var s = n.toFixed(dp);
+    s = s.replace(/0+$/,'').replace(/\.$/,'');
+    return s === '' || s === '-' ? '0' : s;
+  }
+  function addDaysISO(iso, days){
+    var d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0,10);
+  }
+  function addMonthsISO(iso, months){
+    var d = new Date(iso + 'T00:00:00');
+    d.setMonth(d.getMonth() + months);
+    return d.toISOString().slice(0,10);
+  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+  /* ================= Seed data ================= */
+  var SEED = {
+    meta: { periodeAwal: '2026-08-23', periodeAkhir: '2026-09-22' },
+    kategori: [
+      {id:'dana-darurat', nama:'Dana darurat', keterangan:'Dana wajib', budget:700000, batasIrit:0.15, batasPas:0.25},
+      {id:'investasi', nama:'Investasi', keterangan:'Prioritas jangka panjang', budget:300000, batasIrit:0.05, batasPas:0.20},
+      {id:'cicilan', nama:'Cicilan', keterangan:'Kewajiban', budget:600000, batasIrit:0.00, batasPas:0.20},
+      {id:'sedekah', nama:'Sedekah', keterangan:'Sesuaikan kemampuan', budget:100000, batasIrit:0.01, batasPas:0.10},
+      {id:'kuota-pulsa', nama:'Kuota/Pulsa', keterangan:'Internet dan pulsa', budget:100000, batasIrit:0.00, batasPas:0.05},
+      {id:'kebutuhan-pribadi', nama:'Kebutuhan Pribadi', keterangan:'Kebutuhan pribadi', budget:250000, batasIrit:0.00, batasPas:0.10},
+      {id:'buffer', nama:'Buffer', keterangan:'Cadangan fleksibel', budget:300000, batasIrit:0.03, batasPas:0.10},
+      {id:'buku', nama:'Buku', keterangan:'Pengembangan diri', budget:200000, batasIrit:0.00, batasPas:0.05},
+      {id:'makan', nama:'Makan', keterangan:'Kebutuhan makan', budget:250000, batasIrit:0.05, batasPas:0.15},
+      {id:'jalan-jalan', nama:'Jalan-jalan/Main', keterangan:'Hiburan', budget:250000, batasIrit:0.00, batasPas:0.05},
+      {id:'jajan', nama:'Jajan/Keinginan', keterangan:'Keinginan non-prioritas', budget:250000, batasIrit:0.00, batasPas:0.05}
+    ],
+    pemasukan: [],
+    transaksi: [],
+    portofolio: [],
+    target: {
+      total: 0,
+      items: []
+    },
+    tabungan: {
+      rumah: { target:200000000, tahun:2034, entries:[] },
+      motor: { target:25000000, entries:[] }
+    },
+    liburan: {
+      estimasiBudget: 2000000,
+      entries: []
+    },
+    riwayat: []
+  };
+
+  /* ================= State + persistence ================= */
+  var STORAGE_KEY = 'pundi-data';
+  var state = null;
+  // Uses Claude.ai's artifact storage when available (in claude.ai); falls back to the
+  // browser's own localStorage when this file is opened outside claude.ai (e.g. hosted on
+  // GitHub Pages), so the same file works persistently in both places.
+  var hasClaudeStorage = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+  function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+  function loadState(){
+    if (hasClaudeStorage){
+      return window.storage.get(STORAGE_KEY, false).then(function(res){
+        state = (res && res.value) ? JSON.parse(res.value) : deepClone(SEED);
+      }).catch(function(){
+        state = deepClone(SEED);
+      }).then(afterLoad);
+    }
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      state = raw ? JSON.parse(raw) : deepClone(SEED);
+    } catch(e){
+      state = deepClone(SEED);
+    }
+    return Promise.resolve().then(afterLoad);
+  }
+  function afterLoad(){
+    renderAll();
+    saveState();
+  }
+
+  function saveState(){
+    var json = JSON.stringify(state);
+    if (hasClaudeStorage){
+      return window.storage.set(STORAGE_KEY, json, false).catch(function(e){
+        console.error('Gagal menyimpan data', e);
+      });
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, json);
+    } catch(e){
+      console.error('Gagal menyimpan data', e);
+    }
+    return Promise.resolve();
+  }
+
+  /* ================= Derived values ================= */
+  function totalPemasukan(){ return state.pemasukan.reduce(function(s,x){ return s+x.nominal; },0); }
+  function totalBudget(){ return state.kategori.reduce(function(s,x){ return s+x.budget; },0); }
+  function totalAktual(){ return state.transaksi.reduce(function(s,x){ return s+x.nominal; },0); }
+  function sisaPeriode(){ return totalPemasukan() - totalAktual(); }
+  function statusPeriode(){ var s = sisaPeriode(); return s > 0 ? 'Surplus' : (s < 0 ? 'Defisit' : 'Seimbang'); }
+  function statusBadgeClass(status){ return status === 'Surplus' ? 'positive' : (status === 'Defisit' ? 'negative' : 'neutral'); }
+  function aktualPerKategori(katId){
+    return state.transaksi.filter(function(t){ return t.kategoriId === katId; }).reduce(function(s,x){ return s+x.nominal; },0);
+  }
+  function kesimpulanText(status){
+    if (status === 'Surplus') return 'Surplus: evaluasi sisa dan pertahankan prioritas.';
+    if (status === 'Defisit') return 'Defisit: kurangi pengeluaran di kategori yang melebihi budget.';
+    return 'Seimbang: pemasukan dan pengeluaran seimbang periode ini.';
+  }
+  function nilaiKiniAset(a){
+    if (a.kategori === 'Cash') return a.modal;
+    return (a.unit || 0) * (a.hargaKini || 0);
+  }
+  function labaRugiAset(a){
+    return (nilaiKiniAset(a) - a.modal) + (a.hasilLain || 0);
+  }
+  function totalNilaiPortofolio(){ return state.portofolio.reduce(function(s,a){ return s + nilaiKiniAset(a); },0); }
+  function totalModalPortofolio(){ return state.portofolio.reduce(function(s,a){ return s + a.modal; },0); }
+  function totalHasilLainPortofolio(){ return state.portofolio.reduce(function(s,a){ return s + (a.hasilLain||0); },0); }
+  function totalTabungan(){
+    var rumah = state.tabungan.rumah.entries.reduce(function(s,e){ return s+e.nilai; },0);
+    var motor = state.tabungan.motor.entries.reduce(function(s,e){ return s+e.nilai; },0);
+    var liburan = state.liburan.entries.reduce(function(s,e){ return s+e.nilai; },0);
+    return rumah + motor + liburan;
+  }
+
+  /* ================= Render: header ================= */
+  function renderHeader(){
+    $('#header-periode-range').textContent = fmtTanggal(state.meta.periodeAwal) + ' – ' + fmtTanggal(state.meta.periodeAkhir);
+  }
+
+  /* ================= Render: Dashboard ================= */
+  function renderDashboard(){
+    var income = totalPemasukan(), budget = totalBudget(), aktual = totalAktual(), sisa = sisaPeriode();
+    var status = statusPeriode();
+    $('#dash-periode-label').textContent = 'Periode ' + fmtTanggal(state.meta.periodeAwal) + ' – ' + fmtTanggal(state.meta.periodeAkhir);
+    $('#dash-sisa').textContent = rupiah(sisa);
+    var statusBadge = $('#dash-status');
+    statusBadge.textContent = status;
+    statusBadge.className = 'badge ' + statusBadgeClass(status);
+    $('#dash-sub').textContent = 'Sisa dari ' + rupiah(income) + ' pemasukan, ' + rupiah(aktual) + ' terpakai.';
+    $('#dash-income').textContent = rupiah(income);
+    $('#dash-budget').textContent = rupiah(budget);
+    $('#dash-aktual').textContent = rupiah(aktual);
+    var sisaEl = $('#dash-sisa2');
+    sisaEl.textContent = rupiah(sisa);
+    sisaEl.className = 'stat-value ' + (sisa < 0 ? 'negative' : 'brass');
+
+    $('#dash-nilai-portofolio').textContent = rupiah(totalNilaiPortofolio());
+    $('#dash-total-tabungan').textContent = rupiah(totalTabungan());
+    $('#dash-kesimpulan').textContent = kesimpulanText(status);
+  }
+
+  /* ================= Render: Pemasukan ================= */
+  function renderPemasukan(){
+    var list = state.pemasukan.slice().sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
+    $('#pemasukan-total-label').textContent = 'Total ' + rupiah(totalPemasukan());
+    if (list.length === 0){
+      $('#pemasukan-rows').innerHTML = '';
+      $('#pemasukan-empty').style.display = 'block';
+    } else {
+      $('#pemasukan-empty').style.display = 'none';
+      $('#pemasukan-rows').innerHTML = list.map(function(p){
+        return '<tr><td>' + fmtTanggal(p.tanggal) + '</td><td>' + esc(p.sumber) + '</td><td>' + esc(p.keterangan) + '</td>' +
+          '<td class="num">' + rupiah(p.nominal) + '</td><td class="muted">' + esc(p.metode||'–') + '</td>' +
+          '<td class="row-actions"><button type="button" class="btn-text" data-action="edit-pemasukan" data-id="' + p.id + '">Ubah</button>' +
+          '<button type="button" class="btn-text danger" data-action="delete-pemasukan" data-id="' + p.id + '">Hapus</button></td></tr>';
+      }).join('');
+    }
+    var sumberSet = Array.from(new Set(state.pemasukan.map(function(p){ return p.sumber; })));
+    $('#list-sumber').innerHTML = sumberSet.map(function(s){ return '<option value="' + esc(s) + '">'; }).join('');
+  }
+
+  /* ================= Render: Transaksi ================= */
+  function kategoriNama(id){
+    var k = state.kategori.filter(function(x){ return x.id === id; })[0];
+    return k ? k.nama : '(tidak diketahui)';
+  }
+  function renderTransaksiKategoriOptions(){
+    var opts = state.kategori.map(function(k){ return '<option value="' + k.id + '">' + esc(k.nama) + '</option>'; }).join('');
+    $('#tx-kategori').innerHTML = opts;
+    var filterCurrent = $('#tx-filter-kategori').value;
+    $('#tx-filter-kategori').innerHTML = '<option value="">Semua kategori</option>' + opts;
+    $('#tx-filter-kategori').value = filterCurrent;
+  }
+  function renderTransaksi(){
+    renderTransaksiKategoriOptions();
+    var filter = $('#tx-filter-kategori').value;
+    var list = state.transaksi.slice().sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
+    if (filter) list = list.filter(function(t){ return t.kategoriId === filter; });
+    $('#transaksi-total-label').textContent = 'Total ' + rupiah(list.reduce(function(s,x){return s+x.nominal;},0));
+    if (list.length === 0){
+      $('#transaksi-rows').innerHTML = '';
+      $('#transaksi-empty').style.display = 'block';
+    } else {
+      $('#transaksi-empty').style.display = 'none';
+      $('#transaksi-rows').innerHTML = list.map(function(t){
+        return '<tr><td>' + fmtTanggal(t.tanggal) + '</td><td>' + esc(kategoriNama(t.kategoriId)) + '</td><td>' + esc(t.keterangan) +
+          (t.catatan ? '<div class="muted">' + esc(t.catatan) + '</div>' : '') + '</td>' +
+          '<td class="num">' + rupiah(t.nominal) + '</td><td class="muted">' + esc(t.metode||'–') + '</td>' +
+          '<td class="row-actions"><button type="button" class="btn-text" data-action="edit-transaksi" data-id="' + t.id + '">Ubah</button>' +
+          '<button type="button" class="btn-text danger" data-action="delete-transaksi" data-id="' + t.id + '">Hapus</button></td></tr>';
+      }).join('');
+    }
+  }
+
+  /* ================= Render: Budget ================= */
+  function renderBudget(){
+    var income = totalPemasukan();
+    $('#budget-total').textContent = rupiah(totalBudget());
+    $('#budget-aktual-total').textContent = rupiah(totalAktual());
+    var sisaEl = $('#budget-sisa-total');
+    var sisa = totalPemasukan() - totalAktual();
+    sisaEl.textContent = rupiah(sisa);
+    sisaEl.className = 'stat-value ' + (sisa < 0 ? 'negative' : 'brass');
+
+    $('#budget-rows').innerHTML = state.kategori.map(function(k){
+      var akt = aktualPerKategori(k.id);
+      var pctIncome = income > 0 ? k.budget/income : 0;
+      var over = akt > k.budget;
+      return '<tr><td>' + esc(k.nama) + '</td><td class="muted">' + esc(k.keterangan||'') + '</td>' +
+        '<td class="num"><input type="number" min="0" step="1" value="' + k.budget + '" data-action="edit-budget-amount" data-id="' + k.id + '" style="width:100px; background:transparent; border:none; border-bottom:1px solid var(--rule); color:var(--paper); font-family:var(--font-mono); text-align:right; padding:4px;"></td>' +
+        '<td class="num">' + pct1(pctIncome) + '</td>' +
+        '<td class="num">' + rupiah(akt) + '</td>' +
+        '<td class="num">' + rupiah(k.budget - akt) + '</td>' +
+        '<td><span class="badge ' + (over?'negative':'positive') + '">' + (over?'Melebihi':'Dalam budget') + '</span></td>' +
+        '<td class="row-actions"><button type="button" class="btn-text danger" data-action="delete-kategori" data-id="' + k.id + '">Hapus</button></td></tr>';
+    }).join('');
+
+    $('#acuan-rows').innerHTML = state.kategori.map(function(k){
+      return '<tr><td>' + esc(k.nama) + '</td>' +
+        '<td class="num"><input type="number" min="0" max="100" step="0.1" value="' + (k.batasIrit*100).toFixed(1) + '" data-action="edit-batas-irit" data-id="' + k.id + '" style="width:70px; background:transparent; border:none; border-bottom:1px solid var(--rule); color:var(--paper); font-family:var(--font-mono); text-align:right; padding:4px;"> %</td>' +
+        '<td class="num"><input type="number" min="0" max="100" step="0.1" value="' + (k.batasPas*100).toFixed(1) + '" data-action="edit-batas-pas" data-id="' + k.id + '" style="width:70px; background:transparent; border:none; border-bottom:1px solid var(--rule); color:var(--paper); font-family:var(--font-mono); text-align:right; padding:4px;"> %</td>' +
+        '<td class="muted">' + esc(k.keterangan||'') + '</td></tr>';
+    }).join('');
+  }
+
+  /* ================= Render: Portofolio ================= */
+  function renderPortofolio(){
+    var totalNilai = totalNilaiPortofolio();
+    var totalModal = totalModalPortofolio();
+    var totalHasilLain = totalHasilLainPortofolio();
+    var labaRugi = (totalNilai - totalModal) + totalHasilLain;
+    var ret = totalModal !== 0 ? labaRugi/totalModal : 0;
+    $('#pf-total-nilai').textContent = rupiah(totalNilai);
+    $('#pf-total-modal').textContent = rupiah(totalModal);
+    var lr = $('#pf-laba-rugi');
+    lr.textContent = rupiah(labaRugi);
+    lr.className = 'stat-value ' + (labaRugi < 0 ? 'negative' : 'positive');
+    var rt = $('#pf-return');
+    rt.textContent = (ret>=0?'+':'') + pct1(ret);
+    rt.className = 'stat-value ' + (ret < 0 ? 'negative' : 'positive');
+
+    $('#portofolio-rows').innerHTML = state.portofolio.map(function(a){
+      var nk = nilaiKiniAset(a);
+      var lrItem = labaRugiAset(a);
+      var pctFolio = totalNilai > 0 ? nk/totalNilai : 0;
+      var hasilLainNote = a.hasilLain ? '<div class="muted" style="text-align:right;">termasuk dividen/hasil lain ' + rupiah(a.hasilLain) + '</div>' : '';
+      return '<tr><td>' + esc(a.nama) + '</td><td class="muted">' + esc(a.kategori) + '</td>' +
+        '<td class="num">' + trimNum(a.unit) + '</td>' +
+        '<td class="num">' + rupiah(a.modal) + '</td>' +
+        '<td class="num">' + trimNum(a.hargaKini,2) + '</td>' +
+        '<td class="num">' + rupiah(nk) + '</td>' +
+        '<td class="num" style="color:' + (lrItem<0?'var(--negative)':'var(--positive)') + '">' + rupiah(lrItem) + hasilLainNote + '</td>' +
+        '<td class="num">' + pct1(pctFolio) + '</td>' +
+        '<td class="row-actions"><button type="button" class="btn-text" data-action="edit-portofolio" data-id="' + a.id + '">Ubah</button>' +
+        '<button type="button" class="btn-text danger" data-action="delete-portofolio" data-id="' + a.id + '">Hapus</button></td></tr>';
+    }).join('');
+
+    if ($('#target-total-input') !== document.activeElement){
+      $('#target-total-input').value = state.target.total;
+    }
+    var sekarang = totalModal;
+    var kurang = state.target.total - sekarang;
+    $('#target-sekarang').textContent = rupiah(sekarang);
+    $('#target-kurang').textContent = rupiah(kurang);
+    var progress = state.target.total > 0 ? Math.min(100, Math.max(0, (sekarang/state.target.total)*100)) : 0;
+    $('#target-progress-fill').style.width = progress + '%';
+
+    $('#target-rows').innerHTML = state.target.items.map(function(t){
+      return '<tr><td>' + esc(t.kelompok) + '</td><td>' + esc(t.nama) + '</td>' +
+        '<td class="num">' + (t.satuan==='Rp' ? rupiah(t.target) : trimNum(t.target,2) + ' ' + esc(t.satuan)) + '</td>' +
+        '<td class="muted">' + esc(t.satuan) + '</td>' +
+        '<td class="row-actions"><button type="button" class="btn-text danger" data-action="delete-target" data-id="' + t.id + '">Hapus</button></td></tr>';
+    }).join('');
+  }
+
+  /* ================= Render: Tabungan & Rencana ================= */
+  function renderGoal(key){
+    var g = state.tabungan[key];
+    var realisasi = g.entries.reduce(function(s,e){ return s+e.nilai; },0);
+    var sisa = g.target - realisasi;
+    var progress = g.target > 0 ? Math.min(100, Math.max(0,(realisasi/g.target)*100)) : 0;
+    $('#goal-'+key+'-sub').textContent = 'Target ' + rupiah(g.target) + (g.tahun ? (' pada ' + g.tahun) : '');
+    $('#goal-'+key+'-fill').style.width = progress + '%';
+    $('#goal-'+key+'-realisasi').textContent = rupiah(realisasi) + ' terkumpul';
+    $('#goal-'+key+'-sisa').textContent = 'Sisa ' + rupiah(Math.max(0,sisa));
+    var list = g.entries.slice().sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
+    $('#goal-'+key+'-rows').innerHTML = list.length ? list.map(function(e){
+      return '<tr><td>' + fmtTanggal(e.tanggal) + '</td><td class="num">' + rupiah(e.nilai) + '</td><td class="muted">' + esc(e.tempat||'–') + '</td>' +
+        '<td class="row-actions"><button type="button" class="btn-text danger" data-action="delete-goal" data-goal="' + key + '" data-id="' + e.id + '">Hapus</button></td></tr>';
+    }).join('') : '<tr><td colspan="4" class="empty-state">Belum ada tabungan tercatat.</td></tr>';
+  }
+  function renderLiburan(){
+    var l = state.liburan;
+    if ($('#liburan-estimasi') !== document.activeElement){
+      $('#liburan-estimasi').value = l.estimasiBudget;
+    }
+    var realisasi = l.entries.reduce(function(s,e){ return s+e.nilai; },0);
+    var sisa = l.estimasiBudget - realisasi;
+    var progress = l.estimasiBudget > 0 ? Math.min(100, Math.max(0,(realisasi/l.estimasiBudget)*100)) : 0;
+    $('#liburan-sub').textContent = 'Estimasi budget ' + rupiah(l.estimasiBudget);
+    $('#liburan-fill').style.width = progress + '%';
+    $('#liburan-realisasi').textContent = rupiah(realisasi) + ' terkumpul';
+    $('#liburan-sisa').textContent = 'Sisa ' + rupiah(Math.max(0,sisa));
+    var list = l.entries.slice().sort(function(a,b){ return b.tanggal.localeCompare(a.tanggal); });
+    $('#liburan-rows').innerHTML = list.length ? list.map(function(e){
+      return '<tr><td>' + fmtTanggal(e.tanggal) + '</td><td class="num">' + rupiah(e.nilai) + '</td><td class="muted">' + esc(e.tempat||'–') + '</td><td class="muted">' + esc(e.keterangan||'–') + '</td>' +
+        '<td class="row-actions"><button type="button" class="btn-text danger" data-action="delete-liburan" data-id="' + e.id + '">Hapus</button></td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty-state">Belum ada rencana tercatat.</td></tr>';
+  }
+  function renderTabungan(){
+    renderGoal('rumah');
+    renderGoal('motor');
+    renderLiburan();
+  }
+
+  /* ================= Render: Riwayat ================= */
+  function renderRiwayat(){
+    var status = statusPeriode();
+    $('#riwayat-current-row').innerHTML = '<tr><td>' + fmtTanggal(state.meta.periodeAwal) + ' – ' + fmtTanggal(state.meta.periodeAkhir) + '</td>' +
+      '<td class="num">' + rupiah(totalPemasukan()) + '</td><td class="num">' + rupiah(totalBudget()) + '</td>' +
+      '<td class="num">' + rupiah(totalAktual()) + '</td><td class="num">' + rupiah(sisaPeriode()) + '</td>' +
+      '<td><span class="badge ' + statusBadgeClass(status) + '">' + status + '</span></td></tr>';
+
+    if (state.riwayat.length === 0){
+      $('#riwayat-rows').innerHTML = '';
+      $('#riwayat-empty').style.display = 'block';
+    } else {
+      $('#riwayat-empty').style.display = 'none';
+      $('#riwayat-rows').innerHTML = state.riwayat.map(function(r){
+        return '<tr><td>' + esc(r.periode) + '</td><td class="num">' + rupiah(r.income) + '</td><td class="num">' + rupiah(r.budget) + '</td>' +
+          '<td class="num">' + rupiah(r.aktual) + '</td><td class="num">' + rupiah(r.sisa) + '</td>' +
+          '<td><span class="badge ' + statusBadgeClass(r.status) + '">' + esc(r.status) + '</span></td>' +
+          '<td class="muted">' + esc(r.evaluasi||'') + '</td></tr>';
+      }).join('');
+    }
+  }
+
+  function renderAll(){
+    renderHeader();
+    renderDashboard();
+    renderPemasukan();
+    renderTransaksi();
+    renderBudget();
+    renderPortofolio();
+    renderTabungan();
+    renderRiwayat();
+  }
+
+  /* ================= Tabs ================= */
+  function setupTabs(){
+    $all('.tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        $all('.tab').forEach(function(t){ t.classList.remove('active'); });
+        $all('.view').forEach(function(v){ v.classList.remove('active'); });
+        tab.classList.add('active');
+        $('#view-' + tab.dataset.view).classList.add('active');
+      });
+    });
+  }
+
+  /* ================= Pemasukan form ================= */
+  function setupPemasukanForm(){
+    var form = $('#form-pemasukan');
+    $('#pm-tanggal').value = todayISO();
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var editingId = $('#pemasukan-editing-id').value;
+      var data = {
+        tanggal: $('#pm-tanggal').value,
+        sumber: $('#pm-sumber').value.trim(),
+        keterangan: $('#pm-keterangan').value.trim(),
+        nominal: parseFloat($('#pm-nominal').value) || 0,
+        metode: $('#pm-metode').value.trim()
+      };
+      if (editingId){
+        var idx = state.pemasukan.findIndex(function(p){ return p.id === editingId; });
+        if (idx > -1) state.pemasukan[idx] = Object.assign({id:editingId}, data);
+      } else {
+        data.id = uid();
+        state.pemasukan.push(data);
+      }
+      resetPemasukanForm();
+      renderDashboard(); renderPemasukan();
+      saveState();
+    });
+    $('#pm-cancel-btn').addEventListener('click', resetPemasukanForm);
+    $('#pemasukan-rows').addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      var id = btn.dataset.id;
+      if (btn.dataset.action === 'delete-pemasukan'){
+        if (confirm('Hapus catatan pemasukan ini?')){
+          state.pemasukan = state.pemasukan.filter(function(p){ return p.id !== id; });
+          renderDashboard(); renderPemasukan(); saveState();
+        }
+      } else if (btn.dataset.action === 'edit-pemasukan'){
+        var p = state.pemasukan.filter(function(x){ return x.id === id; })[0];
+        if (!p) return;
+        $('#pemasukan-editing-id').value = p.id;
+        $('#pm-tanggal').value = p.tanggal;
+        $('#pm-sumber').value = p.sumber;
+        $('#pm-keterangan').value = p.keterangan;
+        $('#pm-nominal').value = p.nominal;
+        $('#pm-metode').value = p.metode || '';
+        $('#pm-submit-btn').textContent = 'Simpan perubahan';
+        $('#pm-cancel-btn').style.display = 'inline-block';
+        form.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    });
+  }
+  function resetPemasukanForm(){
+    $('#form-pemasukan').reset();
+    $('#pemasukan-editing-id').value = '';
+    $('#pm-tanggal').value = todayISO();
+    $('#pm-submit-btn').textContent = 'Tambah';
+    $('#pm-cancel-btn').style.display = 'none';
+  }
+
+  /* ================= Transaksi form ================= */
+  function setupTransaksiForm(){
+    var form = $('#form-transaksi');
+    $('#tx-tanggal').value = todayISO();
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var editingId = $('#transaksi-editing-id').value;
+      var data = {
+        tanggal: $('#tx-tanggal').value,
+        kategoriId: $('#tx-kategori').value,
+        keterangan: $('#tx-keterangan').value.trim(),
+        nominal: parseFloat($('#tx-nominal').value) || 0,
+        metode: $('#tx-metode').value.trim(),
+        catatan: $('#tx-catatan').value.trim()
+      };
+      if (editingId){
+        var idx = state.transaksi.findIndex(function(t){ return t.id === editingId; });
+        if (idx > -1) state.transaksi[idx] = Object.assign({id:editingId}, data);
+      } else {
+        data.id = uid();
+        state.transaksi.push(data);
+      }
+      resetTransaksiForm();
+      renderDashboard(); renderTransaksi(); renderBudget();
+      saveState();
+    });
+    $('#tx-cancel-btn').addEventListener('click', resetTransaksiForm);
+    $('#tx-filter-kategori').addEventListener('change', renderTransaksi);
+    $('#transaksi-rows').addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      var id = btn.dataset.id;
+      if (btn.dataset.action === 'delete-transaksi'){
+        if (confirm('Hapus transaksi ini?')){
+          state.transaksi = state.transaksi.filter(function(t){ return t.id !== id; });
+          renderDashboard(); renderTransaksi(); renderBudget(); saveState();
+        }
+      } else if (btn.dataset.action === 'edit-transaksi'){
+        var t = state.transaksi.filter(function(x){ return x.id === id; })[0];
+        if (!t) return;
+        $('#transaksi-editing-id').value = t.id;
+        $('#tx-tanggal').value = t.tanggal;
+        $('#tx-kategori').value = t.kategoriId;
+        $('#tx-keterangan').value = t.keterangan;
+        $('#tx-nominal').value = t.nominal;
+        $('#tx-metode').value = t.metode || '';
+        $('#tx-catatan').value = t.catatan || '';
+        $('#tx-submit-btn').textContent = 'Simpan perubahan';
+        $('#tx-cancel-btn').style.display = 'inline-block';
+        form.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    });
+  }
+  function resetTransaksiForm(){
+    $('#form-transaksi').reset();
+    $('#transaksi-editing-id').value = '';
+    $('#tx-tanggal').value = todayISO();
+    $('#tx-submit-btn').textContent = 'Tambah';
+    $('#tx-cancel-btn').style.display = 'none';
+  }
+
+  /* ================= Budget / kategori ================= */
+  function setupBudgetForm(){
+    $('#form-kategori').addEventListener('submit', function(e){
+      e.preventDefault();
+      var nama = $('#kt-nama').value.trim();
+      if (!nama) return;
+      var id = nama.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || uid();
+      if (state.kategori.some(function(k){ return k.id === id; })) id = id + '-' + uid();
+      state.kategori.push({
+        id:id, nama:nama, keterangan:$('#kt-keterangan').value.trim(),
+        budget: parseFloat($('#kt-budget').value)||0,
+        batasIrit: (parseFloat($('#kt-irit').value)||0)/100,
+        batasPas: (parseFloat($('#kt-pas').value)||0)/100
+      });
+      $('#form-kategori').reset();
+      $('#kt-irit').value = 0; $('#kt-pas').value = 5;
+      renderDashboard(); renderBudget(); renderTransaksi();
+      saveState();
+    });
+    $('#budget-rows').addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-action="delete-kategori"]');
+      if (!btn) return;
+      var id = btn.dataset.id;
+      if (confirm('Hapus kategori ini? Transaksi yang sudah tercatat pada kategori ini tidak akan terhapus.')){
+        state.kategori = state.kategori.filter(function(k){ return k.id !== id; });
+        renderDashboard(); renderBudget(); renderTransaksi();
+        saveState();
+      }
+    });
+    $('#budget-rows').addEventListener('change', function(e){
+      var input = e.target.closest('input[data-action="edit-budget-amount"]');
+      if (!input) return;
+      var k = state.kategori.filter(function(x){ return x.id === input.dataset.id; })[0];
+      if (k){ k.budget = parseFloat(input.value)||0; renderDashboard(); renderBudget(); saveState(); }
+    });
+    $('#acuan-rows').addEventListener('change', function(e){
+      var input = e.target.closest('input[data-action="edit-batas-irit"], input[data-action="edit-batas-pas"]');
+      if (!input) return;
+      var k = state.kategori.filter(function(x){ return x.id === input.dataset.id; })[0];
+      if (!k) return;
+      var val = (parseFloat(input.value)||0)/100;
+      if (input.dataset.action === 'edit-batas-irit') k.batasIrit = val; else k.batasPas = val;
+      saveState();
+    });
+  }
+
+  /* ================= Portofolio ================= */
+  function setupPortofolioForm(){
+    var form = $('#form-portofolio');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var editingId = $('#pf-editing-id').value;
+      var data = {
+        nama: $('#pf-nama').value.trim(),
+        kategori: $('#pf-kategori').value,
+        unit: parseFloat($('#pf-unit').value)||0,
+        modal: parseFloat($('#pf-modal').value)||0,
+        hargaBeli: parseFloat($('#pf-harga-beli').value)||0,
+        hargaKini: parseFloat($('#pf-harga-kini').value)||0,
+        hasilLain: parseFloat($('#pf-hasil-lain').value)||0,
+        keterangan: $('#pf-keterangan').value.trim(),
+        coingeckoId: $('#pf-coingecko-id').value.trim()
+      };
+      if (editingId){
+        var idx = state.portofolio.findIndex(function(a){ return a.id === editingId; });
+        if (idx > -1) state.portofolio[idx] = Object.assign({id:editingId}, data);
+      } else {
+        data.id = uid();
+        state.portofolio.push(data);
+      }
+      resetPortofolioForm();
+      renderPortofolio();
+      saveState();
+    });
+    $('#pf-cancel-btn').addEventListener('click', resetPortofolioForm);
+    $('#portofolio-rows').addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      var id = btn.dataset.id;
+      if (btn.dataset.action === 'delete-portofolio'){
+        if (confirm('Hapus aset ini dari portofolio?')){
+          state.portofolio = state.portofolio.filter(function(a){ return a.id !== id; });
+          renderPortofolio(); saveState();
+        }
+      } else if (btn.dataset.action === 'edit-portofolio'){
+        var a = state.portofolio.filter(function(x){ return x.id === id; })[0];
+        if (!a) return;
+        $('#pf-editing-id').value = a.id;
+        $('#pf-nama').value = a.nama;
+        $('#pf-kategori').value = a.kategori;
+        $('#pf-unit').value = a.unit;
+        $('#pf-modal').value = a.modal;
+        $('#pf-harga-beli').value = a.hargaBeli;
+        $('#pf-harga-kini').value = a.hargaKini;
+        $('#pf-hasil-lain').value = a.hasilLain || 0;
+        $('#pf-keterangan').value = a.keterangan || '';
+        $('#pf-coingecko-id').value = a.coingeckoId || '';
+        $('#pf-submit-btn').textContent = 'Simpan perubahan';
+        $('#pf-cancel-btn').style.display = 'inline-block';
+        form.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    });
+    $('#target-total-input').addEventListener('change', function(){
+      state.target.total = parseFloat(this.value)||0;
+      renderPortofolio(); saveState();
+    });
+    $('#form-target').addEventListener('submit', function(e){
+      e.preventDefault();
+      state.target.items.push({
+        id: uid(), kelompok: $('#tg-kelompok').value.trim(), nama: $('#tg-nama').value.trim(),
+        target: parseFloat($('#tg-target').value)||0, satuan: $('#tg-satuan').value.trim() || 'Rp'
+      });
+      $('#form-target').reset();
+      $('#tg-satuan').value = 'Rp';
+      renderPortofolio(); saveState();
+    });
+    $('#target-rows').addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-action="delete-target"]');
+      if (!btn) return;
+      state.target.items = state.target.items.filter(function(t){ return t.id !== btn.dataset.id; });
+      renderPortofolio(); saveState();
+    });
+    $('#btn-refresh-crypto').addEventListener('click', refreshCryptoPrices);
+  }
+
+  function refreshCryptoPrices(){
+    var statusEl = $('#refresh-crypto-status');
+    var btn = $('#btn-refresh-crypto');
+    var targets = state.portofolio.filter(function(a){ return a.kategori === 'Crypto' && a.coingeckoId; });
+    if (targets.length === 0){
+      statusEl.textContent = 'Belum ada aset Crypto dengan CoinGecko ID — isi field itu di form Ubah aset dulu.';
+      return;
+    }
+    var ids = Array.from(new Set(targets.map(function(a){ return a.coingeckoId; }))).join(',');
+    btn.disabled = true;
+    var originalLabel = btn.textContent;
+    btn.textContent = 'Memuat...';
+    statusEl.textContent = '';
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + encodeURIComponent(ids) + '&vs_currencies=idr')
+      .then(function(res){
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        var updated = [];
+        targets.forEach(function(a){
+          var entry = data[a.coingeckoId];
+          if (entry && typeof entry.idr === 'number'){
+            a.hargaKini = entry.idr;
+            updated.push(a.nama);
+          }
+        });
+        if (updated.length > 0){
+          renderPortofolio();
+          saveState();
+          statusEl.textContent = 'Harga diperbarui (CoinGecko): ' + updated.join(', ') + '.';
+        } else {
+          statusEl.textContent = 'Tidak ada harga yang cocok dari respons CoinGecko — cek lagi CoinGecko ID-nya.';
+        }
+      })
+      .catch(function(err){
+        statusEl.textContent = 'Gagal mengambil harga dari CoinGecko (' + err.message + '). Coba lagi, atau isi Harga kini manual seperti biasa.';
+      })
+      .finally(function(){
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      });
+  }
+
+  function resetPortofolioForm(){
+    $('#form-portofolio').reset();
+    $('#pf-editing-id').value = '';
+    $('#pf-unit').value = 0; $('#pf-harga-beli').value = 0; $('#pf-harga-kini').value = 0; $('#pf-hasil-lain').value = 0;
+    $('#pf-submit-btn').textContent = 'Tambah';
+    $('#pf-cancel-btn').style.display = 'none';
+  }
+
+  /* ================= Tabungan & Liburan ================= */
+  function setupGoalForms(){
+    $all('form[data-goal]').forEach(function(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var key = form.dataset.goal;
+        var entry = {
+          id: uid(),
+          tanggal: form.querySelector('.goal-tanggal').value,
+          nilai: parseFloat(form.querySelector('.goal-nilai').value)||0,
+          tempat: form.querySelector('.goal-tempat').value.trim(),
+          keterangan: form.querySelector('.goal-keterangan').value.trim()
+        };
+        state.tabungan[key].entries.push(entry);
+        form.reset();
+        renderGoal(key);
+        saveState();
+      });
+    });
+    ['rumah','motor'].forEach(function(key){
+      $('#goal-'+key+'-rows').addEventListener('click', function(e){
+        var btn = e.target.closest('button[data-action="delete-goal"]');
+        if (!btn) return;
+        if (confirm('Hapus catatan tabungan ini?')){
+          state.tabungan[key].entries = state.tabungan[key].entries.filter(function(x){ return x.id !== btn.dataset.id; });
+          renderGoal(key); saveState();
+        }
+      });
+    });
+    $('#liburan-estimasi').addEventListener('change', function(){
+      state.liburan.estimasiBudget = parseFloat(this.value)||0;
+      renderLiburan(); saveState();
+    });
+    $('#form-liburan').addEventListener('submit', function(e){
+      e.preventDefault();
+      state.liburan.entries.push({
+        id: uid(), tanggal: $('#lb-tanggal').value, nilai: parseFloat($('#lb-nilai').value)||0,
+        tempat: $('#lb-tempat').value.trim(), keterangan: $('#lb-keterangan').value.trim()
+      });
+      $('#form-liburan').reset();
+      renderLiburan(); saveState();
+    });
+    $('#liburan-rows').addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-action="delete-liburan"]');
+      if (!btn) return;
+      state.liburan.entries = state.liburan.entries.filter(function(x){ return x.id !== btn.dataset.id; });
+      renderLiburan(); saveState();
+    });
+  }
+
+  /* ================= Tutup periode ================= */
+  function setupTutupPeriode(){
+    $('#btn-tutup-periode').addEventListener('click', function(){
+      var status = statusPeriode();
+      var ok = confirm('Tutup periode ' + fmtTanggal(state.meta.periodeAwal) + ' – ' + fmtTanggal(state.meta.periodeAkhir) + '?\n\nRingkasan periode ini akan disimpan ke Riwayat, lalu pemasukan dan transaksi akan dikosongkan untuk periode baru.');
+      if (!ok) return;
+      state.riwayat.unshift({
+        periode: fmtTanggal(state.meta.periodeAwal) + ' – ' + fmtTanggal(state.meta.periodeAkhir),
+        income: totalPemasukan(), budget: totalBudget(), aktual: totalAktual(), sisa: sisaPeriode(),
+        status: status, evaluasi: kesimpulanText(status)
+      });
+      var newAwal = addDaysISO(state.meta.periodeAkhir, 1);
+      var newAkhir = addDaysISO(addMonthsISO(newAwal, 1), -1);
+      state.meta.periodeAwal = newAwal;
+      state.meta.periodeAkhir = newAkhir;
+      state.pemasukan = [];
+      state.transaksi = [];
+      renderAll();
+      saveState();
+    });
+  }
+
+  /* ================= Init ================= */
+  document.addEventListener('DOMContentLoaded', function(){
+    setupTabs();
+    setupPemasukanForm();
+    setupTransaksiForm();
+    setupBudgetForm();
+    setupPortofolioForm();
+    setupGoalForms();
+    setupTutupPeriode();
+    loadState();
+  });
+})();
+</script>
+</body>
+</html>
