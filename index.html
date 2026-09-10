@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PUNDI">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-firestore-compat.min.js"></script>
 <style>
   :root{
     --ink:#10141A; --panel:#171C23; --panel-2:#1D232B; --rule:#2A313C;
@@ -169,6 +172,7 @@
       <div class="periode-label">Periode berjalan</div>
       <div class="periode-range" id="header-periode-range">–</div>
       <div><button class="btn btn-ghost btn-sm btn-tutup" id="btn-tutup-periode" type="button">Tutup periode</button></div>
+      <div id="auth-box" style="margin-top:8px;"></div>
     </div>
   </header>
 
@@ -297,10 +301,14 @@
   <!-- ============ BUDGET ============ -->
   <section class="view" id="view-budget">
     <div class="stat-strip">
-      <div class="stat-item"><div class="stat-label">Total budget</div><div class="stat-value" id="budget-total">Rp0</div></div>
+      <div class="stat-item">
+        <div class="stat-label">Total budget</div>
+        <input type="number" id="budget-total-input" class="stat-value" min="0" step="1" style="background:transparent;border:none;color:var(--paper);font-family:var(--font-mono);font-size:19px;width:100%;padding:0;">
+      </div>
       <div class="stat-item"><div class="stat-label">Total aktual</div><div class="stat-value" id="budget-aktual-total">Rp0</div></div>
       <div class="stat-item"><div class="stat-label">Sisa budget</div><div class="stat-value brass" id="budget-sisa-total">Rp0</div></div>
     </div>
+    <p class="sub-note" style="margin:-12px 0 20px;">Ubah angka Total budget untuk menyesuaikan semua kategori sekaligus secara proporsional — atau ubah tiap kategori satu per satu di tabel bawah.</p>
 
     <div class="card">
       <h2 class="section-title">Budget per kategori</h2>
@@ -507,7 +515,7 @@
     </div>
   </section>
 
-  <footer class="app-footer">Data tersimpan otomatis di perangkat ini.</footer>
+  <footer class="app-footer" id="sync-status-footer">Data tersimpan otomatis di perangkat ini.</footer>
 </div>
 
 <script>
@@ -574,95 +582,20 @@
       {id:'jalan-jalan', nama:'Jalan-jalan/Main', keterangan:'Hiburan', budget:250000, batasIrit:0.00, batasPas:0.05},
       {id:'jajan', nama:'Jajan/Keinginan', keterangan:'Keinginan non-prioritas', budget:250000, batasIrit:0.00, batasPas:0.05}
     ],
-    pemasukan: [
-      {id:uid(), tanggal:'2026-08-22', sumber:'Income', keterangan:'Gaji pokok', nominal:2100000, metode:'Transfer'},
-      {id:uid(), tanggal:'2026-08-23', sumber:'Cash only', keterangan:'Sisa uang yang ada', nominal:138000, metode:'Cash'},
-      {id:uid(), tanggal:'2026-08-23', sumber:'Customer', keterangan:'Tip', nominal:25000, metode:'Cash'},
-      {id:uid(), tanggal:'2026-08-25', sumber:'Customer', keterangan:'Tip', nominal:35000, metode:'Cash'},
-      {id:uid(), tanggal:'2026-08-26', sumber:'Customer', keterangan:'Fee Raket', nominal:200000, metode:'Transfer'},
-      {id:uid(), tanggal:'2026-08-26', sumber:'Customer', keterangan:'Tip', nominal:25000, metode:'Cash'},
-      {id:uid(), tanggal:'2026-08-27', sumber:'Customer', keterangan:'Tip', nominal:10000, metode:'Cash'},
-      {id:uid(), tanggal:'2026-08-28', sumber:'Aris', keterangan:'Share', nominal:10000, metode:'Transfer'},
-      {id:uid(), tanggal:'2026-08-28', sumber:'Bos', keterangan:'Uangan Makan', nominal:100000, metode:'Cash'},
-      {id:uid(), tanggal:'2026-09-02', sumber:'M Nana', keterangan:'Kirim paket', nominal:533000, metode:'Transfer'}
-    ],
-    transaksi: [
-      {id:uid(), tanggal:'2026-08-23', kategoriId:'dana-darurat', keterangan:'Arisan', nominal:500000, metode:'Transfer', catatan:'Sudah terlunaskan untuk periode bulan ini'},
-      {id:uid(), tanggal:'2026-08-23', kategoriId:'cicilan', keterangan:'Bos', nominal:1400000, metode:'Cash', catatan:'Masih sisa bon 600k lagi'},
-      {id:uid(), tanggal:'2026-08-23', kategoriId:'makan', keterangan:'Ayam geprek', nominal:18000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-23', kategoriId:'jajan', keterangan:'Kopi dan gorengan', nominal:22000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-23', kategoriId:'jalan-jalan', keterangan:'Kok dan minuman', nominal:45000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-23', kategoriId:'jajan', keterangan:'Roti dan eskrim', nominal:20000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-24', kategoriId:'jajan', keterangan:'Es cincau', nominal:5000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-24', kategoriId:'cicilan', keterangan:'Paylater', nominal:255000, metode:'Debit', catatan:''},
-      {id:uid(), tanggal:'2026-08-25', kategoriId:'makan', keterangan:'Padang', nominal:20000, metode:'Debit', catatan:''},
-      {id:uid(), tanggal:'2026-08-25', kategoriId:'jajan', keterangan:'Gorengan + es cincau', nominal:15000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-26', kategoriId:'jajan', keterangan:'Paket JNE + parkir', nominal:12000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-26', kategoriId:'jajan', keterangan:'Roti + kopi', nominal:21000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-26', kategoriId:'investasi', keterangan:'Goro', nominal:40000, metode:'Qris', catatan:''},
-      {id:uid(), tanggal:'2026-08-27', kategoriId:'jajan', keterangan:'Kopi good day x2', nominal:14000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-27', kategoriId:'jajan', keterangan:'Es cincau dan nutrisari', nominal:10000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-27', kategoriId:'buffer', keterangan:'Tabungan', nominal:100000, metode:'Transfer', catatan:''},
-      {id:uid(), tanggal:'2026-08-28', kategoriId:'sedekah', keterangan:'Infaq', nominal:20000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-28', kategoriId:'jajan', keterangan:'Larutan', nominal:10000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-29', kategoriId:'makan', keterangan:'Nasi bakar', nominal:36000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-29', kategoriId:'jajan', keterangan:'Jus buah + parkir', nominal:34000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-29', kategoriId:'buffer', keterangan:'Ko Ferix', nominal:40000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-29', kategoriId:'jajan', keterangan:'Grip', nominal:20000, metode:'Transfer', catatan:''},
-      {id:uid(), tanggal:'2026-08-30', kategoriId:'makan', keterangan:'Ketoprak dan padang', nominal:31000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-30', kategoriId:'jajan', keterangan:'Kopi good day', nominal:7000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-30', kategoriId:'jajan', keterangan:'Air + eskrim + es', nominal:30000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-08-31', kategoriId:'makan', keterangan:'Roti + minum', nominal:10000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-09-01', kategoriId:'makan', keterangan:'Gorengan + kopi', nominal:30000, metode:'Cash', catatan:''},
-      {id:uid(), tanggal:'2026-09-01', kategoriId:'jajan', keterangan:'Jus buah + larutan', nominal:37000, metode:'Qris', catatan:''},
-      {id:uid(), tanggal:'2026-09-02', kategoriId:'jajan', keterangan:'Jus buah', nominal:32000, metode:'Qris', catatan:''},
-      {id:uid(), tanggal:'2026-09-02', kategoriId:'buffer', keterangan:'Diana', nominal:40000, metode:'Qris', catatan:''},
-      {id:uid(), tanggal:'2026-09-03', kategoriId:'jajan', keterangan:'Gorengan dan minum', nominal:25000, metode:'Cash', catatan:''}
-    ],
-    portofolio: [
-      {id:uid(), nama:'Reksa Dana Pasar Uang', kategori:'Reksa Dana', unit:180.3572, modal:300000, hargaBeli:1663.37, hargaKini:1690.91, hasilLain:0, keterangan:'MODUIT'},
-      {id:uid(), nama:'Reksa Dana Saham', kategori:'Reksa Dana', unit:44.6915, modal:100000, hargaBeli:2237.56, hargaKini:1710.65, hasilLain:0, keterangan:'MODUIT'},
-      {id:uid(), nama:'Bitcoin', kategori:'Crypto', unit:0.000138, modal:284000, hargaBeli:2063353676, hargaKini:1405940000, hasilLain:0, coingeckoId:'bitcoin', keterangan:'FLOQ'},
-      {id:uid(), nama:'FET', kategori:'Crypto', unit:28.50564, modal:94996, hargaBeli:3333, hargaKini:3112, hasilLain:0, coingeckoId:'fetch-ai', keterangan:'FLOQ+REKU'},
-      {id:uid(), nama:'DMAS', kategori:'Saham', unit:1300, modal:183000, hargaBeli:140.2, hargaKini:176, hasilLain:0, keterangan:'STOCKBIT'},
-      {id:uid(), nama:'KIJA', kategori:'Saham', unit:100, modal:17926, hargaBeli:179.29, hargaKini:206, hasilLain:0, keterangan:'STOCKBIT'},
-      {id:uid(), nama:'Emas', kategori:'Emas', unit:0, modal:0, hargaBeli:0, hargaKini:0, hasilLain:0, keterangan:''},
-      {id:uid(), nama:'GORO', kategori:'Properti', unit:20, modal:200000, hargaBeli:10000, hargaKini:10458.15, hasilLain:0, keterangan:'GORO'},
-      {id:uid(), nama:'Kas', kategori:'Cash', unit:0, modal:35000, hargaBeli:0, hargaKini:0, hasilLain:0, keterangan:''}
-    ],
+    pemasukan: [],
+    transaksi: [],
+    portofolio: [],
     target: {
-      total: 30000000,
-      items: [
-        {id:uid(), kelompok:'Dana Darurat', nama:'RDPU', target:10000000, satuan:'Rp'},
-        {id:uid(), kelompok:'Dana Darurat', nama:'RDPT', target:2600000, satuan:'Rp'},
-        {id:uid(), kelompok:'Saham', nama:'BMRI', target:10, satuan:'Lot'},
-        {id:uid(), kelompok:'Saham', nama:'HEXA', target:10, satuan:'Lot'},
-        {id:uid(), kelompok:'Saham', nama:'DMAS', target:50, satuan:'Lot'},
-        {id:uid(), kelompok:'Saham', nama:'KIJA', target:50, satuan:'Lot'},
-        {id:uid(), kelompok:'Crypto', nama:'Bitcoin', target:2000000, satuan:'Rp'},
-        {id:uid(), kelompok:'Crypto', nama:'FET AI', target:500000, satuan:'Rp'},
-        {id:uid(), kelompok:'Crypto', nama:'TAO', target:500000, satuan:'Rp'},
-        {id:uid(), kelompok:'Properti', nama:'GORO', target:2000000, satuan:'Rp'},
-        {id:uid(), kelompok:'Gold', nama:'Treasury', target:3000000, satuan:'Rp'},
-        {id:uid(), kelompok:'Cash', nama:'Saldo/Fiat', target:5000000, satuan:'Rp'}
-      ]
+      total: 0,
+      items: []
     },
     tabungan: {
-      rumah: { target:200000000, tahun:2034, entries:[
-        {id:uid(), tanggal:'2026-08-25', nilai:300000, tempat:'Tabungan Anjas', keterangan:'Anjas tabung'},
-        {id:uid(), tanggal:'2026-08-30', nilai:50000, tempat:'Blu saving', keterangan:'Diana'},
-        {id:uid(), tanggal:'2026-08-31', nilai:15000, tempat:'Blu saving', keterangan:'Diana'}
-      ]},
-      motor: { target:25000000, entries:[
-        {id:uid(), tanggal:'2026-08-27', nilai:35000, tempat:'Blu BCA', keterangan:'Saving blu'}
-      ]}
+      rumah: { target:200000000, tahun:2034, entries:[] },
+      motor: { target:25000000, entries:[] }
     },
     liburan: {
       estimasiBudget: 2000000,
-      entries: [
-        {id:uid(), tanggal:'2026-08-27', nilai:34000, tempat:'Blu BCA', keterangan:'Saving'},
-        {id:uid(), tanggal:'2026-09-02', nilai:50000, tempat:'Dana', keterangan:'Goals'}
-      ]
+      entries: []
     },
     riwayat: []
   };
@@ -670,47 +603,163 @@
   /* ================= State + persistence ================= */
   var STORAGE_KEY = 'pundi-data';
   var state = null;
-  // Uses Claude.ai's artifact storage when available (in claude.ai); falls back to the
+  // Local layer: Claude.ai's artifact storage when available (in claude.ai); falls back to the
   // browser's own localStorage when this file is opened outside claude.ai (e.g. hosted on
-  // GitHub Pages), so the same file works persistently in both places.
+  // GitHub Pages), so the same file works persistently in both places even with no Google
+  // account connected.
   var hasClaudeStorage = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+  // Optional cloud layer: Google sign-in + Firestore, for syncing the same data across devices.
+  // Paste your own Firebase config below (from the Firebase console) to enable this — see the
+  // setup guide. Left as placeholders, the app just runs fully locally as before.
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDnH8dEjFksWC0jwOhgwAClyPI906YP1ms",
+    authDomain: "tracker-e8c73.firebaseapp.com",
+    projectId: "tracker-e8c73",
+    storageBucket: "tracker-e8c73.firebasestorage.app",
+    messagingSenderId: "417003076179",
+    appId: "1:417003076179:web:784df19a3adfef0068e4a6"
+  };
+  var firebaseEnabled = false;
+  var firebaseUser = null;
+  var firestoreDocReady = false; // true once the first cloud snapshot has been received/created
+  var firestoreUnsub = null;
+
+  try {
+    if (typeof firebase !== 'undefined' && FIREBASE_CONFIG.apiKey.indexOf('GANTI') === -1){
+      firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.firestore().enablePersistence().catch(function(){ /* multiple tabs open, or unsupported browser — fine, cloud sync still works without offline cache */ });
+      firebaseEnabled = true;
+    }
+  } catch(e){
+    console.error('Firebase gagal diinisialisasi (cek FIREBASE_CONFIG):', e);
+  }
 
   function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
 
-  function loadState(){
+  function localGet(key){
     if (hasClaudeStorage){
-      return window.storage.get(STORAGE_KEY, false).then(function(res){
-        state = (res && res.value) ? JSON.parse(res.value) : deepClone(SEED);
-      }).catch(function(){
-        state = deepClone(SEED);
-      }).then(afterLoad);
+      return window.storage.get(key, false).then(function(res){ return (res && res.value) ? res.value : null; }).catch(function(){ return null; });
     }
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
+    try { return Promise.resolve(localStorage.getItem(key)); } catch(e){ return Promise.resolve(null); }
+  }
+  function localSet(key, value){
+    if (hasClaudeStorage){
+      return window.storage.set(key, value, false).catch(function(e){ console.error('Gagal menyimpan data lokal', e); });
+    }
+    try { localStorage.setItem(key, value); } catch(e){ console.error('Gagal menyimpan data lokal', e); }
+    return Promise.resolve();
+  }
+
+  function loadState(){
+    return localGet(STORAGE_KEY).then(function(raw){
       state = raw ? JSON.parse(raw) : deepClone(SEED);
-    } catch(e){
-      state = deepClone(SEED);
-    }
-    return Promise.resolve().then(afterLoad);
+    }).then(afterLoad);
   }
   function afterLoad(){
     renderAll();
-    saveState();
+    localSet(STORAGE_KEY, JSON.stringify(state));
   }
 
   function saveState(){
     var json = JSON.stringify(state);
-    if (hasClaudeStorage){
-      return window.storage.set(STORAGE_KEY, json, false).catch(function(e){
-        console.error('Gagal menyimpan data', e);
+    localSet(STORAGE_KEY, json); // always keep a fast local copy too, even when signed in
+    if (firebaseEnabled && firebaseUser && firestoreDocReady){
+      firestoreDocRef(firebaseUser).set({ data: json, updatedAt: Date.now() }).catch(function(e){
+        console.error('Gagal sinkron ke cloud', e);
+        setSyncStatus('Gagal sinkron ke cloud (' + e.message + ') — perubahan tetap tersimpan lokal.');
       });
     }
-    try {
-      localStorage.setItem(STORAGE_KEY, json);
-    } catch(e){
-      console.error('Gagal menyimpan data', e);
-    }
     return Promise.resolve();
+  }
+
+  /* ================= Google sign-in + Firestore sync (optional) ================= */
+  function firestoreDocRef(user){
+    return firebase.firestore().collection('pundi_users').doc(user.uid);
+  }
+  function setSyncStatus(text){
+    var el = $('#sync-status-footer');
+    if (el) el.textContent = text;
+  }
+  function renderAuthBox(){
+    var el = $('#auth-box');
+    if (!el || !firebaseEnabled) return;
+    if (firebaseUser){
+      el.innerHTML = '<span style="font-size:11.5px;color:var(--steel);">' + esc(firebaseUser.email) + '</span> · <button type="button" class="btn-text" id="btn-google-signout" style="font-size:11.5px;">Keluar</button>';
+      $('#btn-google-signout').addEventListener('click', function(){ firebase.auth().signOut(); });
+    } else {
+      el.innerHTML = '<button type="button" class="btn btn-ghost btn-sm" id="btn-google-signin">Masuk dengan Google</button>';
+      $('#btn-google-signin').addEventListener('click', function(){
+        var provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider).catch(function(e){
+          alert('Gagal masuk dengan Google: ' + e.message + '\n\nKalau ini terjadi di preview Claude.ai, coba buka link GitHub Pages kamu langsung di browser — popup Google kadang diblokir di dalam preview.');
+        });
+      });
+    }
+  }
+  function stateHasContent(s){
+    if (!s) return false;
+    var tab = s.tabungan || {};
+    var rumahN = (tab.rumah && tab.rumah.entries) ? tab.rumah.entries.length : 0;
+    var motorN = (tab.motor && tab.motor.entries) ? tab.motor.entries.length : 0;
+    var liburanN = (s.liburan && s.liburan.entries) ? s.liburan.entries.length : 0;
+    return (s.pemasukan && s.pemasukan.length > 0) ||
+           (s.transaksi && s.transaksi.length > 0) ||
+           (s.portofolio && s.portofolio.length > 0) ||
+           (s.riwayat && s.riwayat.length > 0) ||
+           rumahN > 0 || motorN > 0 || liburanN > 0;
+  }
+  function attachFirestoreListener(user){
+    firestoreDocReady = false;
+    setSyncStatus('Menyambungkan ke cloud...');
+    var isFirstSnapshot = true;
+    firestoreUnsub = firestoreDocRef(user).onSnapshot(function(doc){
+      var cloudDataStr = (doc.exists && doc.data() && doc.data().data) ? doc.data().data : null;
+      if (cloudDataStr){
+        var localBefore = state;
+        var sameContent = (JSON.stringify(localBefore) === cloudDataStr);
+        if (isFirstSnapshot && stateHasContent(localBefore) && !sameContent){
+          var pakaiCloud = confirm(
+            'Ditemukan data budget di cloud (akun ' + user.email + ') DAN di perangkat ini, dan isinya berbeda.\n\n' +
+            'Tekan OK untuk PAKAI DATA CLOUD (data di perangkat ini akan ditimpa).\n' +
+            'Tekan Batal untuk PAKAI DATA DI PERANGKAT INI (data cloud akan ditimpa dengan ini).'
+          );
+          if (pakaiCloud){
+            state = JSON.parse(cloudDataStr);
+          } else {
+            firestoreDocRef(user).set({ data: JSON.stringify(state), updatedAt: Date.now() });
+          }
+        } else {
+          state = JSON.parse(cloudDataStr);
+        }
+      } else {
+        // no cloud copy yet for this account — seed it with whatever is currently on this device
+        firestoreDocRef(user).set({ data: JSON.stringify(state), updatedAt: Date.now() });
+      }
+      isFirstSnapshot = false;
+      firestoreDocReady = true;
+      renderAll();
+      localSet(STORAGE_KEY, JSON.stringify(state));
+      setSyncStatus('Tersinkron dengan akun ' + user.email + '.');
+    }, function(err){
+      console.error('Firestore listen error', err);
+      setSyncStatus('Gagal tersambung ke cloud (' + err.message + ') — cek koneksi internet.');
+    });
+  }
+  function setupAuth(){
+    renderAuthBox();
+    if (!firebaseEnabled) return;
+    firebase.auth().onAuthStateChanged(function(user){
+      firebaseUser = user;
+      renderAuthBox();
+      if (user){
+        attachFirestoreListener(user);
+      } else {
+        if (firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
+        firestoreDocReady = false;
+        setSyncStatus('Data tersimpan otomatis di perangkat ini.');
+      }
+    });
   }
 
   /* ================= Derived values ================= */
@@ -828,7 +877,9 @@
   /* ================= Render: Budget ================= */
   function renderBudget(){
     var income = totalPemasukan();
-    $('#budget-total').textContent = rupiah(totalBudget());
+    if ($('#budget-total-input') !== document.activeElement){
+      $('#budget-total-input').value = totalBudget();
+    }
     $('#budget-aktual-total').textContent = rupiah(totalAktual());
     var sisaEl = $('#budget-sisa-total');
     var sisa = totalPemasukan() - totalAktual();
@@ -1154,6 +1205,25 @@
       if (input.dataset.action === 'edit-batas-irit') k.batasIrit = val; else k.batasPas = val;
       saveState();
     });
+    $('#budget-total-input').addEventListener('change', function(){
+      var newTotal = Math.max(0, parseFloat(this.value)||0);
+      redistribusiTotalBudget(newTotal);
+      renderDashboard(); renderBudget();
+      saveState();
+    });
+  }
+
+  function redistribusiTotalBudget(newTotal){
+    var oldTotal = totalBudget();
+    var n = state.kategori.length;
+    if (n === 0) return;
+    if (oldTotal > 0){
+      var ratio = newTotal / oldTotal;
+      state.kategori.forEach(function(k){ k.budget = Math.round(k.budget * ratio); });
+    } else {
+      var share = Math.round(newTotal / n);
+      state.kategori.forEach(function(k){ k.budget = share; });
+    }
   }
 
   /* ================= Portofolio ================= */
@@ -1368,6 +1438,7 @@
     setupPortofolioForm();
     setupGoalForms();
     setupTutupPeriode();
+    setupAuth();
     loadState();
   });
 })();
