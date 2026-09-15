@@ -661,6 +661,7 @@
   function afterLoad(){
     renderAll();
     localSet(STORAGE_KEY, JSON.stringify(state));
+    refreshCryptoPrices(true); // auto-refresh crypto prices once on every load, no need to tap the button
   }
 
   function saveState(){
@@ -1304,15 +1305,19 @@
       state.target.items = state.target.items.filter(function(t){ return t.id !== btn.dataset.id; });
       renderPortofolio(); saveState();
     });
-    $('#btn-refresh-crypto').addEventListener('click', refreshCryptoPrices);
+    $('#btn-refresh-crypto').addEventListener('click', function(){ refreshCryptoPrices(false); });
   }
 
-  function refreshCryptoPrices(){
+  function refreshCryptoPrices(silent){
     var statusEl = $('#refresh-crypto-status');
     var btn = $('#btn-refresh-crypto');
+    if (typeof fetch !== 'function'){
+      if (!silent) statusEl.textContent = 'Browser ini tidak mendukung pengambilan harga otomatis — isi Harga kini manual seperti biasa.';
+      return;
+    }
     var targets = state.portofolio.filter(function(a){ return a.kategori === 'Crypto' && a.coingeckoId; });
     if (targets.length === 0){
-      statusEl.textContent = 'Belum ada aset Crypto dengan CoinGecko ID — isi field itu di form Ubah aset dulu.';
+      if (!silent) statusEl.textContent = 'Belum ada aset Crypto dengan CoinGecko ID — isi field itu di form Ubah aset dulu.';
       return;
     }
     var ids = Array.from(new Set(targets.map(function(a){ return a.coingeckoId; }))).join(',');
